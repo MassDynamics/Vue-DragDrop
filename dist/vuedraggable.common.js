@@ -3875,7 +3875,7 @@ var props = {
   avoidImplicitDeselect: {
     type: Boolean,
     required: false,
-    default: false
+    default: true
   }
 };
 var draggableComponent = {
@@ -3949,7 +3949,7 @@ var draggableComponent = {
     if (this.multiDrag) {
       options.multiDrag = true;
       options.selectedClass = this.selectedClass;
-      options.avoidImplicitDeselect = this.avoidImplicitDeselect;
+      options.avoidImplicitDeselect = true;
 
       if (this.multiDragKey) {
         options.multiDragKey = this.multiDragKey;
