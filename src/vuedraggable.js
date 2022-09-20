@@ -16,7 +16,7 @@ function buildAttribute(object, propName, value) {
 }
 
 function computeVmIndex(vnodes, element) {
-  return vnodes.map(elt => elt.elm).indexOf(element);
+  return vnodes.map((elt) => elt.elm).indexOf(element);
 }
 
 function computeIndexes(slots, children, isTransition, footerOffset) {
@@ -24,12 +24,12 @@ function computeIndexes(slots, children, isTransition, footerOffset) {
     return [];
   }
 
-  const elmFromNodes = slots.map(elt => elt.elm);
+  const elmFromNodes = slots.map((elt) => elt.elm);
   const footerIndex = children.length - footerOffset;
   const rawIndexes = [...children].map((elt, idx) =>
     idx >= footerIndex ? elmFromNodes.length : elmFromNodes.indexOf(elt)
   );
-  return isTransition ? rawIndexes.filter(ind => ind !== -1) : rawIndexes;
+  return isTransition ? rawIndexes.filter((ind) => ind !== -1) : rawIndexes;
 }
 
 function emit(evtName, evtData) {
@@ -37,7 +37,7 @@ function emit(evtName, evtData) {
 }
 
 function delegateAndEmit(evtName) {
-  return evtData => {
+  return (evtData) => {
     if (this.realList !== null) {
       this["onDrag" + evtName](evtData);
     }
@@ -86,7 +86,7 @@ function getComponentAttributes($attrs, componentData) {
     attributes = buildAttribute(attributes, name, value);
   };
   const attrs = Object.keys($attrs)
-    .filter(key => key === "id" || key.startsWith("data-"))
+    .filter((key) => key === "id" || key.startsWith("data-"))
     .reduce((res, key) => {
       res[key] = $attrs[key];
       return res;
@@ -111,10 +111,10 @@ const eventsToEmit = [
   "Filter",
   "Clone",
   "Select",
-  "Deselect"
+  "Deselect",
 ];
 const readonlyProperties = ["Move", ...eventsListened, ...eventsToEmit].map(
-  evt => "on" + evt
+  (evt) => "on" + evt
 );
 var draggingElement = null;
 
@@ -175,7 +175,7 @@ const props = {
   avoidImplicitDeselect: {
     type: Boolean,
     required: false,
-    default: false,
+    default: true,
   },
 };
 
@@ -189,7 +189,7 @@ const draggableComponent = {
   data() {
     return {
       transitionMode: false,
-      noneFunctionalComponentMode: false
+      noneFunctionalComponentMode: false,
     };
   },
 
@@ -243,11 +243,11 @@ const draggableComponent = {
       );
     }
     const optionsAdded = {};
-    eventsListened.forEach(elt => {
+    eventsListened.forEach((elt) => {
       optionsAdded["on" + elt] = delegateAndEmit.call(this, elt);
     });
 
-    eventsToEmit.forEach(elt => {
+    eventsToEmit.forEach((elt) => {
       optionsAdded["on" + elt] = emit.bind(this, elt);
     });
 
@@ -265,7 +265,7 @@ const draggableComponent = {
     if (this.multiDrag) {
       options.multiDrag = true;
       options.selectedClass = this.selectedClass;
-      options.avoidImplicitDeselect = this.avoidImplicitDeselect;
+      options.avoidImplicitDeselect = true;
       if (this.multiDragKey) {
         options.multiDragKey = this.multiDragKey;
       }
@@ -285,7 +285,7 @@ const draggableComponent = {
 
     realList() {
       return this.list ? this.list : this.value;
-    }
+    },
   },
 
   watch: {
@@ -293,19 +293,19 @@ const draggableComponent = {
       handler(newOptionValue) {
         this.updateOptions(newOptionValue);
       },
-      deep: true
+      deep: true,
     },
 
     $attrs: {
       handler(newOptionValue) {
         this.updateOptions(newOptionValue);
       },
-      deep: true
+      deep: true,
     },
 
     realList() {
       this.computeIndexes();
-    }
+    },
   },
 
   methods: {
@@ -359,7 +359,7 @@ const draggableComponent = {
 
     getUnderlyingVmList(htmlElts) {
       const list = htmlElts.map(this.getUnderlyingVm);
-      return list.filter(e => !!e);
+      return list.filter((e) => !!e);
     },
 
     getUnderlyingPotencialDraggableComponent({ __vue__: vue }) {
@@ -397,12 +397,12 @@ const draggableComponent = {
     },
 
     spliceList() {
-      const spliceList = list => list.splice(...arguments);
+      const spliceList = (list) => list.splice(...arguments);
       this.alterList(spliceList);
     },
 
     updatePosition(oldIndex, newIndex) {
-      const updatePosition = list =>
+      const updatePosition = (list) =>
         list.splice(newIndex, 0, list.splice(oldIndex, 1)[0]);
       this.alterList(updatePosition);
     },
@@ -460,7 +460,7 @@ const draggableComponent = {
 
     doDragStartList(evt) {
       this.context = this.getUnderlyingVmList(evt.items);
-      evt.item._underlying_vm_ = this.clone(this.context.map(e => e.element));
+      evt.item._underlying_vm_ = this.clone(this.context.map((e) => e.element));
       draggingElement = evt.item;
     },
 
@@ -491,7 +491,7 @@ const draggableComponent = {
       }
       evt.items.forEach(removeNode);
       const newIndexFrom = this.getVmIndex(evt.newIndex);
-      this.alterList(list => list.splice(newIndexFrom, 0, ...elements));
+      this.alterList((list) => list.splice(newIndexFrom, 0, ...elements));
       const added = elements.map((element, index) => {
         const newIndex = newIndexFrom + index;
         return { element, newIndex };
@@ -534,13 +534,13 @@ const draggableComponent = {
         return;
       }
       const reversed = this.context.sort((a, b) => b.index - a.index);
-      const removed = reversed.map(item => {
+      const removed = reversed.map((item) => {
         const oldIndex = item.index;
         this.resetTransitionData(oldIndex);
         return { element: item.element, oldIndex };
       });
-      this.alterList(list => {
-        removed.forEach(removedItem => {
+      this.alterList((list) => {
+        removed.forEach((removedItem) => {
           list.splice(removedItem.oldIndex, 1);
         });
       });
@@ -573,20 +573,21 @@ const draggableComponent = {
         insertNodeAt(evt.from, item, c.index + this.headerOffset);
       });
       // eslint-disable-next-line prettier/prettier
-      const newIndexFrom = this.getVmIndex(evt.newIndex) - evt.items.indexOf(evt.item);
+      const newIndexFrom =
+        this.getVmIndex(evt.newIndex) - evt.items.indexOf(evt.item);
       const moved = this.context.map((item, index) => {
         const oldIndex = item.index;
         const newIndex = newIndexFrom + index;
         return { element: item.element, oldIndex, newIndex };
       });
-      this.alterList(list => {
+      this.alterList((list) => {
         const target = moved.slice();
         // remove moved elements from old index
         target.sort((a, b) => b.oldIndex - a.oldIndex);
-        target.forEach(e => list.splice(e.oldIndex, 1));
+        target.forEach((e) => list.splice(e.oldIndex, 1));
         // add moved elements to new index
         target.sort((a, b) => a.newIndex - b.newIndex);
-        target.forEach(e => list.splice(e.newIndex, 0, e.element));
+        target.forEach((e) => list.splice(e.newIndex, 0, e.element));
       });
       this.emitChanges({ moved });
     },
@@ -601,7 +602,7 @@ const draggableComponent = {
         return 0;
       }
       const domChildren = [...evt.to.children].filter(
-        el => el.style["display"] !== "none"
+        (el) => el.style["display"] !== "none"
       );
       const currentDOMIndex = domChildren.indexOf(evt.related);
       const currentIndex = relatedContext.component.getVmIndex(currentDOMIndex);
@@ -623,7 +624,7 @@ const draggableComponent = {
       Object.assign(draggedContext, { futureIndex });
       const sendEvt = Object.assign({}, evt, {
         relatedContext,
-        draggedContext
+        draggedContext,
       });
       return onMove(sendEvt, originalEvent);
     },
@@ -632,8 +633,8 @@ const draggableComponent = {
       evt.items.forEach(Sortable.utils.deselect);
       this.computeIndexes();
       draggingElement = null;
-    }
-  }
+    },
+  },
 };
 
 if (typeof window !== "undefined" && "Vue" in window) {
