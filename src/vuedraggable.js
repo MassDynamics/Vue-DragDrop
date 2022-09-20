@@ -123,55 +123,60 @@ const props = {
   list: {
     type: Array,
     required: false,
-    default: null
+    default: null,
   },
   value: {
     type: Array,
     required: false,
-    default: null
+    default: null,
   },
   noTransitionOnDrag: {
     type: Boolean,
-    default: false
+    default: false,
   },
   clone: {
     type: Function,
-    default: original => {
+    default: (original) => {
       return original;
-    }
+    },
   },
   element: {
     type: String,
-    default: "div"
+    default: "div",
   },
   tag: {
     type: String,
-    default: null
+    default: null,
   },
   move: {
     type: Function,
-    default: null
+    default: null,
   },
   componentData: {
     type: Object,
     required: false,
-    default: null
+    default: null,
   },
   multiDrag: {
     type: Boolean,
     required: false,
-    default: false
+    default: false,
   },
   multiDragKey: {
     type: String,
     required: false,
-    default: null
+    default: null,
   },
   selectedClass: {
     type: String,
     required: false,
-    default: null
-  }
+    default: null,
+  },
+  avoidImplicitDeselect: {
+    type: Boolean,
+    required: false,
+    default: false,
+  },
 };
 
 const draggableComponent = {
@@ -254,12 +259,13 @@ const draggableComponent = {
     const options = Object.assign({}, this.options, attributes, optionsAdded, {
       onMove: (evt, originalEvent) => {
         return this.onDragMove(evt, originalEvent);
-      }
+      },
     });
     !("draggable" in options) && (options.draggable = ">*");
     if (this.multiDrag) {
       options.multiDrag = true;
       options.selectedClass = this.selectedClass;
+      options.avoidImplicitDeselect = this.avoidImplicitDeselect;
       if (this.multiDragKey) {
         options.multiDragKey = this.multiDragKey;
       }
