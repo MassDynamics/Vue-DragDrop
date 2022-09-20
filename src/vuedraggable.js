@@ -564,7 +564,7 @@ const draggableComponent = {
       evt.items.forEach((item, index) => {
         const c = this.context[index];
         removeNode(item);
-        insertNodeAt(evt.from, item, c.index);
+        insertNodeAt(evt.from, item, c.index + this.headerOffset);
       });
       // eslint-disable-next-line prettier/prettier
       const newIndexFrom = this.getVmIndex(evt.newIndex) - evt.items.indexOf(evt.item);

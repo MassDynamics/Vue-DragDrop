@@ -4285,7 +4285,7 @@ var draggableComponent = {
       evt.items.forEach(function (item, index) {
         var c = _this7.context[index];
         Object(helper["d" /* removeNode */])(item);
-        Object(helper["c" /* insertNodeAt */])(evt.from, item, c.index);
+        Object(helper["c" /* insertNodeAt */])(evt.from, item, c.index + _this7.headerOffset);
       }); // eslint-disable-next-line prettier/prettier
 
       var newIndexFrom = this.getVmIndex(evt.newIndex) - evt.items.indexOf(evt.item);
