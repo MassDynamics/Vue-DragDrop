@@ -2974,7 +2974,6 @@ function insertNodeAt(fatherNode, node, position) {
       fatherNode.insertBefore(node, refNode);
     } catch (e) {
       //this was to deal was a bug, when moving more than 2 items from one list to another
-      debugger;
       console.warn(e);
       insertNodeAt(fatherNode, node, position + 1);
     }
