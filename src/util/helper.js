@@ -30,17 +30,14 @@ function insertNodeAt(fatherNode, node, position) {
     fatherNode.children.length &&
     (position === 0 || fatherNode.children[position - 1])
   ) {
+      //nextSibling seems to break
     const refNode =
       position === 0
         ? fatherNode.children[0]
-        : fatherNode.children[position - 1].nextSibling;
-    try {
-      fatherNode.insertBefore(node, refNode);
-    } catch (e) {
-      //this was to deal was a bug, when moving more than 2 items from one list to another
-      console.warn(e);
-      insertNodeAt(fatherNode, node, position + 1);
-    }
+        : fatherNode.children[position - 1 + 1];
+
+    fatherNode.insertBefore(node, refNode);
+
   } else {
     fatherNode.append(node);
   }
