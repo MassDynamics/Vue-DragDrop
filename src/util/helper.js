@@ -15,7 +15,7 @@ function cached(fn) {
 }
 
 const regex = /-(\w)/g;
-const camelize = cached(str =>
+const camelize = cached((str) =>
   str.replace(regex, (_, c) => (c ? c.toUpperCase() : ""))
 );
 
@@ -38,11 +38,9 @@ function insertNodeAt(fatherNode, node, position) {
       fatherNode.insertBefore(node, refNode);
     } catch (e) {
       //this was to deal was a bug, when moving more than 2 items from one list to another
-      debugger;
-      console.warn(e)
-      insertNodeAt(fatherNode, node, position+1)
+      console.warn(e);
+      insertNodeAt(fatherNode, node, position + 1);
     }
-
   } else {
     fatherNode.append(node);
   }
