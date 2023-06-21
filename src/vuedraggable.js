@@ -190,6 +190,10 @@ const draggableComponent = {
     return {
       transitionMode: false,
       noneFunctionalComponentMode: false,
+      // below are the data used for hacky sortable bug fix
+      currentComponentVueId: null,
+      destinationComponentVueId: null,
+      parentElement: null,
     };
   },
 
@@ -234,6 +238,26 @@ const draggableComponent = {
   },
 
   mounted() {
+    // this top code is a hacky fix to handle broken sortable event sending
+    // sortable erronously sends an update event in a certain case, instead of a add and remove event from the correct components.
+    // the element we find here is listed in the web app, and is needed to give
+    // the draggable components a common parent to listen to events on
+
+    this.parentElement = document.getElementById("hack-for-multidrag");
+
+    this.parentElement.addEventListener(
+      "handle-dragged-item-move-sortable-error",
+      (event) => {
+        if (event.detail.destinationComponentVueId === this._uid) {
+          // need help with
+          this.doDragAddList(
+            event.detail.evt,
+            event.detail.evt.item._underlying_vm_
+          );
+        }
+      }
+    );
+
     this.noneFunctionalComponentMode =
       this.getTag().toLowerCase() !== this.$el.nodeName.toLowerCase() &&
       !this.getIsFunctional();
@@ -459,6 +483,7 @@ const draggableComponent = {
     },
 
     doDragStartList(evt) {
+      this.currentComponentVueId = evt.from.__vue__._uid;
       this.context = this.getUnderlyingVmList(evt.items);
       evt.item._underlying_vm_ = this.clone(this.context.map((e) => e.element));
       draggingElement = evt.item;
@@ -491,6 +516,7 @@ const draggableComponent = {
       }
       evt.items.forEach(removeNode);
       const newIndexFrom = this.getVmIndex(evt.newIndex);
+
       this.alterList((list) => list.splice(newIndexFrom, 0, ...elements));
       const added = elements.map((element, index) => {
         const newIndex = newIndexFrom + index;
@@ -518,6 +544,37 @@ const draggableComponent = {
       this.spliceList(oldIndex, 1);
       this.resetTransitionData(oldIndex);
       const removed = { element: this.context.element, oldIndex };
+      this.emitChanges({ removed });
+    },
+
+    doHackRemove(evt) {
+      // this code has been added to handle case where user drags items from one list i.e. 1 and 3, and
+      // drops them at the top of the other list.
+      evt.items.forEach((item, index) => {
+        insertNodeAt(this.rootContainer, item, index + 1); // I changed the insertNodeAt third parameter here from evt.oldIndicies[index].index
+      });
+      if (evt.pullMode === "clone") {
+        if (evt.clones) {
+          evt.clones.forEach(removeNode);
+        } else {
+          removeNode(evt.clone);
+        }
+        return;
+      }
+      const reversed = this.context.sort((a, b) => b.index - a.index);
+      const removed = reversed.map((item) => {
+        const oldIndex = item.index;
+        this.resetTransitionData(oldIndex);
+        return { element: item.element, oldIndex };
+      });
+
+      this.alterList((list) => {
+        removed.forEach((removedItem) => {
+          list.splice(removedItem.oldIndex, 1);
+        });
+      });
+
+      this.computeIndexes();
       this.emitChanges({ removed });
     },
 
@@ -567,6 +624,24 @@ const draggableComponent = {
     },
 
     doDragUpdateList(evt) {
+      // this code has been added to handle case where user drags items from one list i.e. 1 and 3, and
+      // drops them at the top of the list. The sortable package is firing the wrong events, so we are
+      // having to force them to happen ourselves in this hacky way
+      // we check the vue ids of current component and where we want to drop to. If they are different
+      // we fire a custom event to the parent component to tell it to handle the move
+      if (this.currentComponentVueId !== this.destinationComponentVueId) {
+        this.parentElement.dispatchEvent(
+          new CustomEvent("handle-dragged-item-move-sortable-error", {
+            detail: {
+              evt: evt,
+              destinationComponentVueId: this.destinationComponentVueId,
+            },
+          })
+        );
+        this.doHackRemove(evt);
+        return;
+      }
+
       evt.items.forEach((item, index) => {
         const c = this.context[index];
         removeNode(item);
@@ -613,6 +688,7 @@ const draggableComponent = {
     },
 
     onDragMove(evt, originalEvent) {
+      this.destinationComponentVueId = evt.to.__vue__._uid;
       const onMove = this.move;
       if (!onMove || !this.realList) {
         return true;
@@ -633,6 +709,7 @@ const draggableComponent = {
       evt.items.forEach(Sortable.utils.deselect);
       this.computeIndexes();
       draggingElement = null;
+      this.destinationComponentVueId = null;
     },
   },
 };

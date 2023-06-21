@@ -3886,7 +3886,11 @@ var draggableComponent = {
   data: function data() {
     return {
       transitionMode: false,
-      noneFunctionalComponentMode: false
+      noneFunctionalComponentMode: false,
+      // below are the data used for hacky sortable bug fix
+      currentComponentVueId: null,
+      destinationComponentVueId: null,
+      parentElement: null
     };
   },
   render: function render(h) {
@@ -3923,6 +3927,17 @@ var draggableComponent = {
   mounted: function mounted() {
     var _this3 = this;
 
+    // this top code is a hacky fix to handle broken sortable event sending
+    // sortable erronously sends an update event in a certain case, instead of a add and remove event from the correct components.
+    // the element we find here is listed in the web app, and is needed to give
+    // the draggable components a common parent to listen to events on
+    this.parentElement = document.getElementById("hack-for-multidrag");
+    this.parentElement.addEventListener("handle-dragged-item-move-sortable-error", function (event) {
+      if (event.detail.destinationComponentVueId === _this3._uid) {
+        // need help with
+        _this3.doDragAddList(event.detail.evt, event.detail.evt.item._underlying_vm_);
+      }
+    });
     this.noneFunctionalComponentMode = this.getTag().toLowerCase() !== this.$el.nodeName.toLowerCase() && !this.getIsFunctional();
 
     if (this.noneFunctionalComponentMode && this.transitionMode) {
@@ -4144,6 +4159,7 @@ var draggableComponent = {
       draggingElement = evt.item;
     },
     doDragStartList: function doDragStartList(evt) {
+      this.currentComponentVueId = evt.from.__vue__._uid;
       this.context = this.getUnderlyingVmList(evt.items);
       evt.item._underlying_vm_ = this.clone(this.context.map(function (e) {
         return e.element;
@@ -4224,11 +4240,13 @@ var draggableComponent = {
         removed: removed
       });
     },
-    doDragRemoveList: function doDragRemoveList(evt) {
+    doHackRemove: function doHackRemove(evt) {
       var _this6 = this;
 
+      // this code has been added to handle case where user drags items from one list i.e. 1 and 3, and
+      // drops them at the top of the other list.
       evt.items.forEach(function (item, index) {
-        Object(helper["c" /* insertNodeAt */])(_this6.rootContainer, item, evt.oldIndicies[index].index);
+        Object(helper["c" /* insertNodeAt */])(_this6.rootContainer, item, index + 1); // I changed the insertNodeAt third parameter here from evt.oldIndicies[index].index
       });
 
       if (evt.pullMode === "clone") {
@@ -4248,6 +4266,46 @@ var draggableComponent = {
         var oldIndex = item.index;
 
         _this6.resetTransitionData(oldIndex);
+
+        return {
+          element: item.element,
+          oldIndex: oldIndex
+        };
+      });
+      this.alterList(function (list) {
+        removed.forEach(function (removedItem) {
+          list.splice(removedItem.oldIndex, 1);
+        });
+      });
+      this.computeIndexes();
+      this.emitChanges({
+        removed: removed
+      });
+    },
+    doDragRemoveList: function doDragRemoveList(evt) {
+      var _this7 = this;
+
+      evt.items.forEach(function (item, index) {
+        Object(helper["c" /* insertNodeAt */])(_this7.rootContainer, item, evt.oldIndicies[index].index);
+      });
+
+      if (evt.pullMode === "clone") {
+        if (evt.clones) {
+          evt.clones.forEach(helper["d" /* removeNode */]);
+        } else {
+          Object(helper["d" /* removeNode */])(evt.clone);
+        }
+
+        return;
+      }
+
+      var reversed = this.context.sort(function (a, b) {
+        return b.index - a.index;
+      });
+      var removed = reversed.map(function (item) {
+        var oldIndex = item.index;
+
+        _this7.resetTransitionData(oldIndex);
 
         return {
           element: item.element,
@@ -4287,12 +4345,28 @@ var draggableComponent = {
       });
     },
     doDragUpdateList: function doDragUpdateList(evt) {
-      var _this7 = this;
+      var _this8 = this;
+
+      // this code has been added to handle case where user drags items from one list i.e. 1 and 3, and
+      // drops them at the top of the list. The sortable package is firing the wrong events, so we are
+      // having to force them to happen ourselves in this hacky way
+      // we check the vue ids of current component and where we want to drop to. If they are different
+      // we fire a custom event to the parent component to tell it to handle the move
+      if (this.currentComponentVueId !== this.destinationComponentVueId) {
+        this.parentElement.dispatchEvent(new CustomEvent("handle-dragged-item-move-sortable-error", {
+          detail: {
+            evt: evt,
+            destinationComponentVueId: this.destinationComponentVueId
+          }
+        }));
+        this.doHackRemove(evt);
+        return;
+      }
 
       evt.items.forEach(function (item, index) {
-        var c = _this7.context[index];
+        var c = _this8.context[index];
         Object(helper["d" /* removeNode */])(item);
-        Object(helper["c" /* insertNodeAt */])(evt.from, item, c.index + _this7.headerOffset);
+        Object(helper["c" /* insertNodeAt */])(evt.from, item, c.index + _this8.headerOffset);
       }); // eslint-disable-next-line prettier/prettier
 
       var newIndexFrom = this.getVmIndex(evt.newIndex) - evt.items.indexOf(evt.item);
@@ -4344,6 +4418,7 @@ var draggableComponent = {
       return draggedInList || !evt.willInsertAfter ? currentIndex : currentIndex + 1;
     },
     onDragMove: function onDragMove(evt, originalEvent) {
+      this.destinationComponentVueId = evt.to.__vue__._uid;
       var onMove = this.move;
 
       if (!onMove || !this.realList) {
@@ -4366,6 +4441,7 @@ var draggableComponent = {
       evt.items.forEach(external_commonjs_sortablejs_commonjs2_sortablejs_amd_sortablejs_root_Sortable_default.a.utils.deselect);
       this.computeIndexes();
       draggingElement = null;
+      this.destinationComponentVueId = null;
     }
   }
 };
