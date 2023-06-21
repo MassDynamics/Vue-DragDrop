@@ -3941,12 +3941,16 @@ var draggableComponent = {
     // the element we find here is listed in the web app, and is needed to give
     // the draggable components a common parent to listen to events on
     this.parentElement = document.getElementById("hack-for-multidrag");
-    this.parentElement.addEventListener("handle-dragged-item-move-sortable-error", function (event) {
-      if (event.detail.destinationComponentVueId === _this3._uid) {
-        // need help with
-        _this3.doDragAddList(event.detail.evt, event.detail.evt.item._underlying_vm_);
-      }
-    });
+
+    if (this.parentElement) {
+      this.parentElement.addEventListener("handle-dragged-item-move-sortable-error", function (event) {
+        if (event.detail.destinationComponentVueId === _this3._uid) {
+          // need help with
+          _this3.doDragAddList(event.detail.evt, event.detail.evt.item._underlying_vm_);
+        }
+      });
+    }
+
     this.noneFunctionalComponentMode = this.getTag().toLowerCase() !== this.$el.nodeName.toLowerCase() && !this.getIsFunctional();
 
     if (this.noneFunctionalComponentMode && this.transitionMode) {
@@ -4362,14 +4366,16 @@ var draggableComponent = {
       // we check the vue ids of current component and where we want to drop to. If they are different
       // we fire a custom event to the parent component to tell it to handle the move
       if (this.currentComponentVueId !== this.destinationComponentVueId) {
-        this.parentElement.dispatchEvent(new CustomEvent("handle-dragged-item-move-sortable-error", {
-          detail: {
-            evt: evt,
-            destinationComponentVueId: this.destinationComponentVueId
-          }
-        }));
-        this.doHackRemove(evt);
-        return;
+        if (this.parentElement) {
+          this.parentElement.dispatchEvent(new CustomEvent("handle-dragged-item-move-sortable-error", {
+            detail: {
+              evt: evt,
+              destinationComponentVueId: this.destinationComponentVueId
+            }
+          }));
+          this.doHackRemove(evt);
+          return;
+        }
       }
 
       evt.items.forEach(function (item, index) {
